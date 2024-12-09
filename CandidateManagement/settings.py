@@ -17,6 +17,9 @@ import os
 # Determine the environment
 ENVIRONMENT = os.getenv('ENVIRONMENT', 'development')  # Default to 'development'
 
+# Debug mode
+DEBUG = ENVIRONMENT != 'production'
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -102,6 +105,7 @@ else:
         }
     }
 
+print(f"Running in {ENVIRONMENT} mode. DEBUG is {'ON' if DEBUG else 'OFF'}")
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators

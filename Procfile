@@ -1,1 +1,1 @@
-web: gunicorn cms.wsgi
+web: gunicorn CandidateManagement.wsgi

@@ -30,7 +30,7 @@ SECRET_KEY = "django-insecure-2kyyi3*0u@kgkc%%g398ul&12-%%8y41oqhxzim0rimk86ojk5
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1','localhost','olvtechnologies-cms.onrender.com']
+ALLOWED_HOSTS = ['127.0.0.1','localhost','olvtechnologies-cms.onrender.com','candidate-management-backend-1.onrender.com']
 
 
 # Application definition

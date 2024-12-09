@@ -11,6 +11,11 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 from pathlib import Path
+import dj_database_url
+import os
+
+# Determine the environment
+ENVIRONMENT = os.getenv('ENVIRONMENT', 'development')  # Default to 'development'
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,7 +30,7 @@ SECRET_KEY = "django-insecure-2kyyi3*0u@kgkc%%g398ul&12-%%8y41oqhxzim0rimk86ojk5
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1','localhost']
+ALLOWED_HOSTS = ['127.0.0.1','localhost','olvtechnologies-cms.onrender.com']
 
 
 # Application definition
@@ -40,6 +45,7 @@ INSTALLED_APPS = [
     "candidates",
     "corsheaders",
     "rest_framework",
+    "whitenoise.runserver_nostatic"
 ]
 
 MIDDLEWARE = [
@@ -52,6 +58,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 ROOT_URLCONF = "CandidateManagement.urls"
@@ -78,16 +85,22 @@ WSGI_APPLICATION = "CandidateManagement.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        'ENGINE': 'django.db.backends.postgresql',  # Use PostgreSQL
-        'NAME': 'postgres',                     # Your database name
-        'USER': 'postgres',                         # Your database username
-        'PASSWORD': 'postgres',                 # Your database password
-        'HOST': 'localhost',                      # Host address (localhost for local)
-        'PORT': '5432', 
+if ENVIRONMENT=='production':
+    # Production settings
+    DATABASES = {
+        'default': dj_database_url.config(conn_max_age=600, ssl_require=True)
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            'ENGINE': 'django.db.backends.postgresql',  # Use PostgreSQL
+            'NAME': 'postgres',                     # Your database name
+            'USER': 'postgres',                         # Your database username
+            'PASSWORD': 'postgres',                 # Your database password
+            'HOST': 'localhost',                      # Host address (localhost for local)
+            'PORT': '5432', 
+        }
+    }
 
 
 # Password validation
@@ -125,6 +138,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = "static/"
+
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
@@ -166,3 +183,5 @@ SESSION_COOKIE_AGE = 60 * 60 * 24 * 7  # 1 week
 SESSION_COOKIE_NAME = 'sessionid'  # Default session cookie name
 
 CSRF_TRUSTED_ORIGINS = ['http://localhost:3000','http://localhost:8000']
+
+MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")

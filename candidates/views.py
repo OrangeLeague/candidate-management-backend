@@ -175,6 +175,7 @@ def delete_team(request, pk):
         except Team.DoesNotExist:
             return JsonResponse({"error": "Team not found."}, status=404)
     return JsonResponse({"error": "Only DELETE method is allowed"}, status=405)
+
 @api_view(['GET'])
 def get_candidates(request):
     """

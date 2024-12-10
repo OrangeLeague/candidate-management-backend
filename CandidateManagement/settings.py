@@ -186,6 +186,6 @@ CORS_ORIGIN_WHITELIST = [
 SESSION_COOKIE_AGE = 60 * 60 * 24 * 7  # 1 week
 SESSION_COOKIE_NAME = 'sessionid'  # Default session cookie name
 
-CSRF_TRUSTED_ORIGINS = ['http://localhost:3000','http://localhost:8000']
+CSRF_TRUSTED_ORIGINS = ['http://localhost:3000','http://localhost:8000','https://olvtechnologies-cms.netlify.app']
 
 MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")

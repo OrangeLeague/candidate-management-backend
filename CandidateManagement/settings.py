@@ -168,7 +168,8 @@ CORS_ALLOW_METHODS = [
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # Default session engine
 SESSION_COOKIE_SECURE = True  # For local testing; set True in production
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SAMESITE = 'Lax'
+# SESSION_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_SAMESITE='None'
 SESSION_COOKIE_NAME = 'sessionid'  # Default cookie name
 
 REST_FRAMEWORK = {
@@ -178,14 +179,21 @@ REST_FRAMEWORK = {
 }
 
 CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOWED_ORIGINS = [
+    "https://olvtechnologies-cms.netlify.app",  # Your frontend URL
+    "http://localhost:3000",  # For local development
+    "https://candidate-management-backend-1.onrender.com"
+]
+
 CORS_ORIGIN_WHITELIST = [
     'http://localhost:3000',  # The URL of your React frontend
 ]
 
-
 SESSION_COOKIE_AGE = 60 * 60 * 24 * 7  # 1 week
+
 SESSION_COOKIE_NAME = 'sessionid'  # Default session cookie name
 
-CSRF_TRUSTED_ORIGINS = ['http://localhost:3000','http://localhost:8000','https://olvtechnologies-cms.netlify.app']
+CSRF_TRUSTED_ORIGINS = ['http://localhost:3000','http://localhost:8000','https://olvtechnologies-cms.netlify.app',"https://candidate-management-backend-1.onrender.com","https://olvtechnologies-cms.netlify.app"]
 
 MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")

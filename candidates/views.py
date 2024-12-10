@@ -45,6 +45,7 @@ def login_view(request):
 # Logout View
 @csrf_exempt
 def logout_view(request):
+    print(f"Session data2: {request.session.items()}")
     if 'team_id' in  request.session:
         del request.session['team_id']
         print(f"Session data3: {request.session.items()}")

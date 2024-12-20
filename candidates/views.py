@@ -7,12 +7,15 @@ from django.db.models import Q
 from rest_framework.views import APIView
 from .serializers import TeamSerializer, CandidateSerializer
 from rest_framework import status
-from .models import Team, Candidate
+from .models import Team, Candidate, RejectionComment,TimeSlot
 from rest_framework.response import Response
 from django.utils.decorators import method_decorator
 from json import loads
 from rest_framework.decorators import api_view
 from django.shortcuts import get_object_or_404
+import json
+from datetime import datetime
+from django.core.exceptions import ValidationError
 
 # Manual Login View
 @csrf_exempt
@@ -35,7 +38,8 @@ def login_view(request):
             print(request,'request12')
             return JsonResponse({
                 "access": token,
-                "message": "Login successful"
+                "message": "Login successful",
+                "team_id":team.id
             }, status=200)
         except Team.DoesNotExist:
             return JsonResponse({"detail": "Invalid credentials"}, status=400)
@@ -54,11 +58,17 @@ def logout_view(request):
         return JsonResponse({"message": "Successfully logged out"}, status=200)
     return JsonResponse({"error": "No active session found"}, status=400)
 
+@csrf_exempt
 def candidate_list(request):
     """
     View to fetch candidates visible to the logged-in team.
     """
-    team_id = request.session.get('team_id')
+    print(f"Cookies: {request.COOKIES}")
+    print(f"Session Items: {request.session.items()}")
+    print(f"Session Key: {request.session.session_key}")
+    # team_id = request.session.get('team_id')
+    print(request.GET,'sdfsdfsdf')
+    team_id = request.GET.get('activeTeamId')
     if not team_id:
         return JsonResponse({"error": "Unauthorized access"}, status=401)
 
@@ -84,6 +94,7 @@ def candidate_list(request):
             "status": candidate.status,
             "cv": candidate.cv.url if candidate.cv else None,
             "team": candidate.team.name if candidate.team else None,
+            "scheduled_time":candidate.scheduled_time if candidate.scheduled_time else None
         }
         for candidate in candidates
     ]
@@ -107,18 +118,33 @@ def update_status(request, candidate_id, status):
     except Candidate.DoesNotExist:
         return JsonResponse({"error": "Candidate not found"}, status=404)
 
+    data = json.loads(request.body)  # Parse JSON body
+    comment = data.get('comment')
     # Logic to update candidate status
     if status == 'Interview Scheduled' and candidate.status == 'Open':
         candidate.status = 'Interview Scheduled'
         candidate.team = team
         candidate.rejected_by.clear()  # Clear rejection history if the status changes
+        print(f"scheduled_time: {request}")
+        scheduled_time = data.get('scheduled_time')
+        if scheduled_time:
+            candidate.scheduled_time = datetime.strptime(scheduled_time, "%Y-%m-%d %I:%M %p")
+            # candidate.scheduled_time = scheduled_time
+        else:
+            return JsonResponse({"error": "Scheduled time is required"}, status=400)
     elif status == 'Selected' and candidate.team == team:
         candidate.status = 'Selected'
         candidate.rejected_by.clear()  # Clear rejection history if the candidate is selected
+        candidate.scheduled_time=None
     elif status == 'Rejected' and candidate.team == team:
         candidate.status = 'Open'
         candidate.team = None  # Make candidate visible to all other teams
+        candidate.scheduled_time=None
         candidate.rejected_by.add(team)  # Add the rejecting team to the rejection history
+        if comment:
+            RejectionComment.objects.create(candidate=candidate, team=team, comment=comment)
+        else:
+            return JsonResponse({"error": "Comment is required for rejection"}, status=400)
     elif status == 'Open' and candidate.status == 'Rejected' and candidate.team == team:
         candidate.status = 'Open'
         candidate.team = None  # Make candidate visible to all teams again
@@ -210,7 +236,153 @@ def delete_candidate(request, pk):
     candidate.delete()
     return Response({"message": "Candidate deleted successfully."}, status=status.HTTP_200_OK)
 
+def parse_time(time_str):
+    """
+    Convert time in 'HH:MM AM/PM' format to a Python time object.
+    """
+    try:
+        # Parse the time string using datetime.strptime
+        time_obj = datetime.strptime(time_str, "%I:%M %p").time()
+        return time_obj
+    except ValueError:
+        raise ValidationError(f"Invalid time format: {time_str}. Expected format is 'HH:MM AM/PM'.")
 
+def get_time_slots_for_half(half):
+    """
+    Get predefined time slots based on the half (1st or 2nd).
+    """
+    if half == "1st half":
+        return ["9:00 AM", "10:00 AM", "11:00 AM", "12:00 PM"]
+    elif half == "2nd half":
+        return ["12:00 PM", "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM", "5:00 PM"]
+    else:
+        return []
+
+
+@csrf_exempt
+# @login_required
+def bulk_schedule_time_slots(request):
+    if request.method == "POST":
+        try:
+            # Parse incoming JSON data
+            data = json.loads(request.body)
+
+            # Validate that the data is in the expected format (dictionary with dates as keys)
+            if not isinstance(data, dict):
+                return JsonResponse({"error": "Invalid data format. Expected a dictionary with dates as keys."}, status=400)
+
+            # Extract candidate ID from the data
+            candidate_id = data.get("candidate")
+            if not candidate_id:
+                return JsonResponse({"error": "Candidate ID is required."}, status=400)
+
+            try:
+                candidate = Candidate.objects.get(id=candidate_id)
+            except Candidate.DoesNotExist:
+                return JsonResponse({"error": f"Candidate with ID {candidate_id} does not exist."}, status=400)
+
+            # List to hold created time slots for response
+            created_slots = []
+
+            for date, time_slots in data.items():
+                # Skip "candidate" key if it is present
+                if date == "candidate":
+                    continue
+
+                # Validate that time slots are a list
+                if not isinstance(time_slots, list):
+                    return JsonResponse({"error": f"Invalid time slots for {date}. Expected a list of time slots."}, status=400)
+
+                # Loop through the time slots for this date
+                for time_str in time_slots:
+                    if time_str in ["1st half", "2nd half"]:
+                        # If it's "1st half" or "2nd half", get the predefined time slots
+                        predefined_slots = get_time_slots_for_half(time_str)
+                        for slot in predefined_slots:
+                            # Convert the slot to a valid time format
+                            time_obj = parse_time(slot)
+
+                            # Check if the time slot already exists for the candidate on this date and time
+                            if TimeSlot.objects.filter(candidate=candidate, date=date, time=time_obj).exists():
+                                continue  # Skip if this slot already exists
+
+                            # Create the time slot
+                            time_slot = TimeSlot.objects.create(
+                                candidate=candidate,
+                                date=date,
+                                time=time_obj,
+                                created_by=request.user if request.user.is_authenticated else None
+                            )
+
+                            # Add the created time slot to the list for response
+                            created_slots.append({
+                                "id": time_slot.id,
+                                "candidate": candidate.id,
+                                "date": time_slot.date,
+                                "time": time_slot.time.strftime('%I:%M %p'),
+                                "created_by": time_slot.created_by.id if time_slot.created_by else None,
+                                "created_at": time_slot.created_at.isoformat(),
+                            })
+                    else:
+                        # If it's a specific time (not 1st/2nd half), directly process it
+                        time_obj = parse_time(time_str)
+
+                        # Check if the time slot already exists for the candidate on this date and time
+                        if TimeSlot.objects.filter(candidate=candidate, date=date, time=time_obj).exists():
+                            continue  # Skip if this slot already exists
+
+                        # Create the time slot
+                        time_slot = TimeSlot.objects.create(
+                            candidate=candidate,
+                            date=date,
+                            time=time_obj,
+                            created_by=request.user if request.user.is_authenticated else None
+                        )
+
+                        # Add the created time slot to the list for response
+                        created_slots.append({
+                            "id": time_slot.id,
+                            "candidate": candidate.id,
+                            "date": time_slot.date,
+                            "time": time_slot.time.strftime('%I:%M %p'),
+                            "created_by": time_slot.created_by.id if time_slot.created_by else None,
+                            "created_at": time_slot.created_at.isoformat(),
+                        })
+
+            return JsonResponse({"created_slots": created_slots}, status=201)
+
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON format."}, status=400)
+        except ValidationError as e:
+            return JsonResponse({"error": str(e)}, status=400)
+        except Exception as e:
+            return JsonResponse({"error": f"An unexpected error occurred: {str(e)}"}, status=500)
+
+    return JsonResponse({"error": "Only POST method is allowed."}, status=405)
+
+def get_candidate_time_slots(request, candidate_id):
+    """
+    Fetch all time slots for a given candidate by ID.
+    """
+    try:
+        # Check if the candidate exists
+        time_slots = TimeSlot.objects.filter(candidate_id=candidate_id).order_by('date', 'time')
+
+        if not time_slots.exists():
+            return JsonResponse({"message": f"No time slots found for candidate ID {candidate_id}."}, status=404)
+
+        # Prepare the response data
+        response_data = {}
+        for slot in time_slots:
+            date_key = slot.date.isoformat()  # Group by date in ISO format
+            if date_key not in response_data:
+                response_data[date_key] = []
+            response_data[date_key].append(slot.time.strftime("%I:%M %p"))  # Format time in HH:MM AM/PM
+
+        return JsonResponse({"candidate_id": candidate_id, "time_slots": response_data}, status=200)
+
+    except Exception as e:
+        return JsonResponse({"error": f"An unexpected error occurred: {str(e)}"}, status=500)
 # # View for CRUD operations on teams
 # @method_decorator(csrf_exempt, name='dispatch')
 # class TeamAdminView(APIView):

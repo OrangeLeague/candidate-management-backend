@@ -197,3 +197,6 @@ SESSION_COOKIE_NAME = 'sessionid'  # Default session cookie name
 CSRF_TRUSTED_ORIGINS = ['http://localhost:3000','http://localhost:8000','https://olvtechnologies-cms.netlify.app',"https://candidate-management-backend-1.onrender.com","https://olvtechnologies-cms.netlify.app"]
 
 MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

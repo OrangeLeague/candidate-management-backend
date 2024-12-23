@@ -172,8 +172,8 @@ CORS_ALLOW_METHODS = [
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # Default session engine
 SESSION_COOKIE_SECURE = True  # For local testing; set True in production
 SESSION_COOKIE_HTTPONLY = True
-# SESSION_COOKIE_SAMESITE = 'Lax'
-SESSION_COOKIE_SAMESITE='None'
+SESSION_COOKIE_SAMESITE = 'Lax'
+# SESSION_COOKIE_SAMESITE='None'
 SESSION_COOKIE_NAME = 'sessionid'  # Default cookie name
 
 REST_FRAMEWORK = {

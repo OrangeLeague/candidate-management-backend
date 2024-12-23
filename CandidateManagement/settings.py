@@ -18,7 +18,7 @@ import os
 ENVIRONMENT = os.getenv('ENVIRONMENT', 'development')  # Default to 'development'
 
 # Debug mode
-DEBUG = ENVIRONMENT != 'production'
+# DEBUG = ENVIRONMENT != 'production'
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -202,12 +202,5 @@ CSRF_TRUSTED_ORIGINS = ['http://localhost:3000','http://localhost:8000','https:/
 
 MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
 
-# STATICFILES_DIRS = [
-#     BASE_DIR / "static"
-# ]
 MEDIA_URL = '/media/'
-MEDIA_ROOT = '/media'
-# MEDIA_ROOT = os.path.join(BASE_DIR, 'media') 
-
-# MEDIA_URL = 'contents/'
-# MEDIA_ROOT = BASE_DIR / 'static/contents'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

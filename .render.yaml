@@ -1,0 +1,6 @@
+services:
+  - name: candidate-management-backend
+    type: web
+    disk:
+      mountPath: /media
+      persistent: true

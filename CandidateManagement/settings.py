@@ -202,5 +202,17 @@ CSRF_TRUSTED_ORIGINS = ['http://localhost:3000','http://localhost:8000','https:/
 
 MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+# MEDIA_URL = '/media/'
+# MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+# Ensure media files are served in production
+if not DEBUG:
+    import os
+    from django.conf import settings
+
+    # Define the media URL
+    MEDIA_URL = '/media/'
+
+    # Set the correct media root path
+    MEDIA_ROOT = os.path.join(settings.BASE_DIR, 'media')
+
+# Serve files via a custom static files configuration, if needed

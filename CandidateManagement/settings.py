@@ -213,6 +213,6 @@ if not DEBUG:
     MEDIA_URL = '/media/'
 
     # Set the correct media root path
-    MEDIA_ROOT = os.path.join(settings.BASE_DIR, 'media')
+    MEDIA_ROOT = os.path.join(settings.BASE_DIR, 'media/cvs/')
 
 # Serve files via a custom static files configuration, if needed

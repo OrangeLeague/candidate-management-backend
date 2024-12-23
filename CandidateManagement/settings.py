@@ -205,8 +205,8 @@ MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
 STATICFILES_DIRS = [
     BASE_DIR / "static"
 ]
-# MEDIA_URL = '/media/'
-# MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-MEDIA_URL = 'contents/'
-MEDIA_ROOT = BASE_DIR / 'static/contents'
+# MEDIA_URL = 'contents/'
+# MEDIA_ROOT = BASE_DIR / 'static/contents'

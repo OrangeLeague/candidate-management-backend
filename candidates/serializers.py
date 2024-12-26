@@ -18,5 +18,5 @@ class CandidateSerializer(serializers.ModelSerializer):
         model = Candidate
         fields = [
             'id', 'name', 'years_of_experience', 
-            'skillset', 'status', 'cv', 'team', 'rejected_by','rejection_comments','notice_period','current_company','qualification','current_locatinon','vendor'
+            'skillset', 'status', 'cv', 'team', 'rejected_by','rejection_comments','notice_period','current_company','qualification','current_location','vendor'
         ]

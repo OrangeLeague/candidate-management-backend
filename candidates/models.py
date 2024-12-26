@@ -29,7 +29,7 @@ class Candidate(models.Model):
     notice_period=models.IntegerField(null=True, blank=True)
     current_company=models.CharField(max_length=200, blank=True)
     qualification=models.CharField(max_length=200, blank=True)
-    current_locatinon=models.CharField(max_length=200, blank=True)
+    current_location=models.CharField(max_length=200, blank=True)
     vendor=models.CharField(max_length=200,default='OLVT', blank=True)
 
     def __str__(self):

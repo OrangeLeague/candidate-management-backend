@@ -26,6 +26,11 @@ class Candidate(models.Model):
     team = models.ForeignKey(Team, null=True, blank=True, on_delete=models.SET_NULL)
     rejected_by = models.ManyToManyField(Team, related_name='rejected_candidates', blank=True)
     scheduled_time = models.DateTimeField(null=True, blank=True)  # New field to store interview scheduled time
+    notice_period=models.IntegerField(null=True, blank=True)
+    current_company=models.CharField(max_length=200, blank=True)
+    qualification=models.CharField(max_length=200, blank=True)
+    current_locatinon=models.CharField(max_length=200, blank=True)
+    vendor=models.CharField(max_length=200,default='OLVT', blank=True)
 
     def __str__(self):
         return self.name

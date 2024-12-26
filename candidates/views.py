@@ -94,7 +94,12 @@ def candidate_list(request):
             "status": candidate.status,
             "cv": candidate.cv.url if candidate.cv else None,
             "team": candidate.team.name if candidate.team else None,
-            "scheduled_time":candidate.scheduled_time if candidate.scheduled_time else None
+            "scheduled_time":candidate.scheduled_time if candidate.scheduled_time else None,
+            "current_company":candidate.current_company if candidate.current_company else None,
+            "current_location":candidate.current_location if candidate.current_company else None,
+            "qualification":candidate.qualification if candidate.qualification else None,
+            "notice_period":candidate.notice_period if candidate.notice_period else None,
+            "vendor":candidate.vendor if candidate.vendor else None,
         }
         for candidate in candidates
     ]

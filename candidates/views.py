@@ -16,6 +16,8 @@ from django.shortcuts import get_object_or_404
 import json
 from datetime import datetime
 from django.core.exceptions import ValidationError
+from .utils.backblaze import BackblazeB2
+import os
 
 # Manual Login View
 @csrf_exempt
@@ -225,6 +227,27 @@ def add_candidate(request):
     """
     Add a new candidate.
     """
+    if request.FILES.get('cv'):
+        file = request.FILES['cv']
+        file_name = file.name
+
+        # Save the file temporarily
+        temp_path = f"/tmp/{file_name}"
+        with open(temp_path, 'wb+') as temp_file:
+            for chunk in file.chunks():
+                temp_file.write(chunk)
+
+        # Upload the file to Backblaze
+        b2 = BackblazeB2()
+        try:
+            file_url = b2.upload_file(temp_path, file_name)
+            os.remove(temp_path)  # Remove the temporary file
+            # Include the file URL in the request data
+            request.data['cv'] = file_url
+        except Exception as e:
+            os.remove(temp_path)  # Ensure temp file is removed on error
+            return Response({'error': f'File upload failed: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
     serializer = CandidateSerializer(data=request.data)
     if serializer.is_valid():
         serializer.save()
@@ -433,3 +456,28 @@ def get_candidate_time_slots(request, candidate_id):
 #             return Response({"message": "Candidate deleted successfully."}, status=status.HTTP_200_OK)
 #         except Candidate.DoesNotExist:
 #             return Response({"error": "Candidate not found."}, status=status.HTTP_404_NOT_FOUND)
+
+def upload_resume(request):
+    if request.method == 'POST' and request.FILES.get('file'):
+        file = request.FILES['file']
+        file_name = file.name
+
+        # Save the file temporarily
+        temp_path = f"/tmp/{file_name}"
+        with open(temp_path, 'wb+') as temp_file:
+            for chunk in file.chunks():
+                temp_file.write(chunk)
+
+        # Upload the file to Backblaze
+        b2 = BackblazeB2()
+        try:
+            file_url = b2.upload_file(temp_path, file_name)
+            os.remove(temp_path)  # Remove the temporary file
+
+            # Save file information in the database
+            resume = Candidate.objects.create(name=file_name, file_url=file_url)
+            return JsonResponse({'message': 'File uploaded successfully', 'file_url': file_url})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+    return JsonResponse({'error': 'Invalid request'}, status=400)

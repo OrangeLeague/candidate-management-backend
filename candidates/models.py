@@ -31,6 +31,7 @@ class Candidate(models.Model):
     qualification=models.CharField(max_length=200, blank=True)
     current_location=models.CharField(max_length=200, blank=True)
     vendor=models.CharField(max_length=200,default='OLVT', blank=True)
+    file_url = models.URLField(max_length=1024,null=True, blank=True)  # Store the public URL of the file
 
     def __str__(self):
         return self.name

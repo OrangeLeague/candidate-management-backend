@@ -56,7 +56,6 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -101,10 +100,14 @@ else:
     DATABASES = {
         "default": {
             'ENGINE': 'django.db.backends.postgresql',  # Use PostgreSQL
-            'NAME': 'postgres',                     # Your database name
-            'USER': 'postgres',                         # Your database username
-            'PASSWORD': 'postgres',                 # Your database password
-            'HOST': 'localhost',                      # Host address (localhost for local)
+            # 'NAME': 'postgres',                     # Your database name
+            'NAME':'olvtdb',
+            # 'USER': 'postgres',                         # Your database username
+            'USER':'olvtdb_user',
+            # 'PASSWORD': 'postgres',                 # Your database password
+            'PASSWORD':'meU7gCaUjdYnv3u4GIJOpUxZAJAuo77k',
+            # 'HOST': 'localhost',                      # Host address (localhost for local)
+            'HOST':'dpg-ctbf02jtq21c73c5o3dg-a.oregon-postgres.render.com',
             'PORT': '5432', 
         }
     }
@@ -202,17 +205,14 @@ CSRF_TRUSTED_ORIGINS = ['http://localhost:3000','http://localhost:8000','https:/
 
 MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
 
-# MEDIA_URL = '/media/'
-# MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-# Ensure media files are served in production
-if not DEBUG:
-    import os
-    from django.conf import settings
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-    # Define the media URL
-    MEDIA_URL = '/media/'
 
-    # Set the correct media root path
-    MEDIA_ROOT = os.path.join(settings.BASE_DIR, 'media/cvs/')
+# settings.py
 
-# Serve files via a custom static files configuration, if needed
+BACKBLAZE_ACCESS_KEY="5220d59da28e"
+BACKBLAZE_SECRET_KEY="0053fb072f638fb96840983c884dc2c459a8b2730a"
+BACKBLAZE_ENDPOINT_URL="https://s3.us-west-002.backblazeb2.com"
+BACKBLAZE_BUCKET_NAME="OLVT-DB"
+

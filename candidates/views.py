@@ -103,6 +103,7 @@ def candidate_list(request):
             "qualification":candidate.qualification if candidate.qualification else None,
             "notice_period":candidate.notice_period if candidate.notice_period else None,
             "vendor":candidate.vendor if candidate.vendor else None,
+            "file_url":candidate.file_url if candidate.file_url else None,
         }
         for candidate in candidates
     ]

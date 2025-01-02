@@ -40,7 +40,7 @@ class BackblazeB2:
         try:
             # Generate a presigned URL to upload a file
             url = self.s3.generate_presigned_url(
-                'put_object',
+                'get_object',
                 Params={'Bucket': self.bucket_name, 'Key': object_name},
                 ExpiresIn=expiration
             )

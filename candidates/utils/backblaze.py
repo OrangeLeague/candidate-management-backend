@@ -4,6 +4,7 @@ from django.conf import settings
 
 class BackblazeB2:
     def __init__(self):
+        print(settings.BACKBLAZE_ENDPOINT_URL,ettings.BACKBLAZE_ACCESS_KEY,settings.BACKBLAZE_SECRET_KEY,'sdfhsdfsdfsdf')
         self.s3 = boto3.client(
             's3',
             endpoint_url=settings.BACKBLAZE_ENDPOINT_URL,

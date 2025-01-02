@@ -4,14 +4,24 @@ from django.conf import settings
 
 class BackblazeB2:
     def __init__(self):
-        print(settings.BACKBLAZE_ENDPOINT_URL,ettings.BACKBLAZE_ACCESS_KEY,settings.BACKBLAZE_SECRET_KEY,'sdfhsdfsdfsdf')
-        self.s3 = boto3.client(
-            's3',
-            endpoint_url=settings.BACKBLAZE_ENDPOINT_URL,
-            aws_access_key_id=settings.BACKBLAZE_ACCESS_KEY,
-            aws_secret_access_key=settings.BACKBLAZE_SECRET_KEY,
+        print("Initializing BackblazeB2...")
+        print(
+            f"Endpoint: {settings.BACKBLAZE_ENDPOINT_URL}, "
+            f"Access Key: {settings.BACKBLAZE_ACCESS_KEY}, "
+            f"Secret Key: {settings.BACKBLAZE_SECRET_KEY[:4]}****, "  # Partially masked for security
+            f"Bucket Name: {settings.BACKBLAZE_BUCKET_NAME}"
         )
-        self.bucket_name = settings.BACKBLAZE_BUCKET_NAME
+        try:
+            self.s3 = boto3.client(
+                's3',
+                endpoint_url=settings.BACKBLAZE_ENDPOINT_URL,
+                aws_access_key_id=settings.BACKBLAZE_ACCESS_KEY,
+                aws_secret_access_key=settings.BACKBLAZE_SECRET_KEY,
+            )
+            self.bucket_name = settings.BACKBLAZE_BUCKET_NAME
+            print("BackblazeB2 initialized successfully.")
+        except Exception as e:
+            raise Exception(f"Failed to initialize BackblazeB2: {e}")
 
     def upload_file(self, file_path, object_name):
         """Upload a file to the bucket."""

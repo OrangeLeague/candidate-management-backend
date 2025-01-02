@@ -17,6 +17,7 @@ import json
 from datetime import datetime
 from django.core.exceptions import ValidationError
 from .utils.backblaze import BackblazeB2
+# from candidates.utils.backblaze import BackblazeB2
 import os
 
 # Manual Login View
@@ -227,8 +228,11 @@ def add_candidate(request):
     """
     Add a new candidate.
     """
+    print('started function')
     if request.FILES.get('cv'):
+        print('started1 function')
         file = request.FILES['cv']
+        print(file.name,'started2')
         file_name = file.name
 
         # Save the file temporarily
@@ -236,15 +240,19 @@ def add_candidate(request):
         with open(temp_path, 'wb+') as temp_file:
             for chunk in file.chunks():
                 temp_file.write(chunk)
-
+        print('started3...')
         # Upload the file to Backblaze
         b2 = BackblazeB2()
+        print('started3@@@')
         try:
+            print('started3')
             file_url = b2.upload_file(temp_path, file_name)
+            print(f"File uploaded successfully: {file_url}")
             os.remove(temp_path)  # Remove the temporary file
             # Include the file URL in the request data
-            request.data['cv'] = file_url
+            request.data['file_url'] = file_url
         except Exception as e:
+            print(f"File upload failed: {str(e)}")
             os.remove(temp_path)  # Ensure temp file is removed on error
             return Response({'error': f'File upload failed: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
@@ -252,6 +260,10 @@ def add_candidate(request):
     if serializer.is_valid():
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+    if not serializer.is_valid():
+        print(serializer.errors)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 

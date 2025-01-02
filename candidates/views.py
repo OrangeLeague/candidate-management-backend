@@ -18,8 +18,64 @@ from datetime import datetime
 from django.core.exceptions import ValidationError
 from .utils.backblaze import BackblazeB2
 # from candidates.utils.backblaze import BackblazeB2
+from django.core.files.storage import default_storage
 import os
+import boto3
+from botocore.exceptions import ClientError
+import io
 
+AWS_ACCESS_KEY_ID = 'AKIAS2VS4NCUU2RN32G4'
+AWS_SECRET_ACCESS_KEY = '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'
+S3_BUCKET = 'olvttalentspherebucket'
+
+def s3_client():
+    """
+    Create and return an S3 client using the provided credentials.
+    """
+    try:
+        s3 = boto3.client(
+            's3',
+            aws_access_key_id=AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=AWS_SECRET_ACCESS_KEY
+        )
+        return s3
+    except Exception as e:
+        print(f"Error initializing S3 client: {e}")
+        raise e
+def upload_to_s3(file_content, s3_object_key, content_type=None):
+    """
+    Uploads file to S3 bucket.
+
+    :param file_content: File content to be uploaded (bytes)
+    :param s3_object_key: S3 object key (path inside the bucket)
+    :param content_type: MIME type of the file (e.g., 'application/pdf')
+    :return: S3 URL of the uploaded file
+    """
+    try:
+        s3 = s3_client()
+        print('entered into s3 bucket')
+        s3_bucket = S3_BUCKET
+        print('s3_bucket',s3_bucket)
+
+        # Upload file to S3 bucket
+        s3.upload_fileobj(
+            io.BytesIO(file_content),
+            s3_bucket,
+            s3_object_key,
+            ExtraArgs={'ContentType': content_type or 'application/octet-stream'}
+        )
+
+        # Generate and return the file URL
+        s3_url = f'https://{s3_bucket}.s3.amazonaws.com/{s3_object_key}'
+        print(f"File successfully uploaded to: {s3_url}")
+        return s3_url
+
+    except ClientError as e:
+        print(f"Failed to upload file to S3: {e}")
+        raise e
+    except Exception as e:
+        print(f"Unexpected error occurred: {e}")
+        raise e
 # Manual Login View
 @csrf_exempt
 def login_view(request):
@@ -229,44 +285,125 @@ def add_candidate(request):
     """
     Add a new candidate.
     """
-    print('started function')
+    # print('started function')
+    # if request.FILES.get('cv'):
+    #     print('started1 function')
+    #     file = request.FILES['cv']
+    #     print(file.name,'started2')
+    #     file_name = file.name
+
+    #     # Save the file temporarily
+    #     temp_path = f"/tmp/{file_name}"
+    #     with open(temp_path, 'wb+') as temp_file:
+    #         for chunk in file.chunks():
+    #             temp_file.write(chunk)
+    #     print('started3...')
+    #     # Upload the file to Backblaze
+    #     b2 = BackblazeB2()
+    #     print('started3@@@')
+    #     try:
+    #         print('started3')
+    #         file_url = b2.upload_file(temp_path, file_name)
+    #         # file_url = b2.generate_presigned_url(file_name)
+    #         print(f"File uploaded successfully: {file_url}")
+    #         os.remove(temp_path)  # Remove the temporary file
+    #         # Include the file URL in the request data
+    #         request.data['file_url'] = file_url
+    #     except Exception as e:
+    #         print(f"File upload failed: {str(e)}")
+    #         os.remove(temp_path)  # Ensure temp file is removed on error
+    #         return Response({'error': f'File upload failed: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    # if request.FILES.get('cv'):
+    #     file = request.FILES['cv']
+    #     print(f"File: {file.name}")
+
+    #     # Create a new Candidate instance with the uploaded file
+    #     candidate = Candidate(cv=file)
+    #     candidate.save()
+
+    # serializer = CandidateSerializer(data=request.data)
+    # if serializer.is_valid():
+    #     serializer.save()
+    #     return Response(serializer.data, status=status.HTTP_201_CREATED)
+    # if not serializer.is_valid():
+    #     print(serializer.errors)
+    #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+    # if request.FILES.get('cv'):
+    #     file = request.FILES['cv']
+    #     print(f"File: {file.name}")
+
+    #     # Save file using Django's default storage
+    #     file_path = default_storage.save(f'media/cvs/{file.name}', file)
+    #     print(f"File saved to: {file_path}")
+
+    #     # Temporarily add the file to the request data for serializer validation
+    #     mutable_data = request.data.copy()
+    #     mutable_data['cv'] = file_path
+
+    #     # Use serializer to validate and save the data
+    #     serializer = CandidateSerializer(data=mutable_data)
+    #     print('entered1')
+    #     if serializer.is_valid():
+    #         print('entered2')
+    #         serializer.save()
+    #         print(f"File saved to")
+    #         return Response(serializer.data, status=status.HTTP_201_CREATED)
+    #     else:
+    #         print(serializer.errors)
+    #         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    # else:
+    #     # If no 'cv' file is provided
+    #     return Response({'error': 'No CV file uploaded'}, status=status.HTTP_400_BAD_REQUEST)
+
     if request.FILES.get('cv'):
-        print('started1 function')
-        file = request.FILES['cv']
-        print(file.name,'started2')
-        file_name = file.name
-
-        # Save the file temporarily
-        temp_path = f"/tmp/{file_name}"
-        with open(temp_path, 'wb+') as temp_file:
-            for chunk in file.chunks():
-                temp_file.write(chunk)
-        print('started3...')
-        # Upload the file to Backblaze
-        b2 = BackblazeB2()
-        print('started3@@@')
         try:
-            print('started3')
-            file_url = b2.upload_file(temp_path, file_name)
-            # file_url = b2.generate_presigned_url(file_name)
-            print(f"File uploaded successfully: {file_url}")
-            os.remove(temp_path)  # Remove the temporary file
-            # Include the file URL in the request data
-            request.data['file_url'] = file_url
-        except Exception as e:
-            print(f"File upload failed: {str(e)}")
-            os.remove(temp_path)  # Ensure temp file is removed on error
-            return Response({'error': f'File upload failed: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
-    serializer = CandidateSerializer(data=request.data)
-    if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    if not serializer.is_valid():
-        print(serializer.errors)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            # Get the file from the request
+            file = request.FILES['cv']
+            print('entereddsd')
+            file_content = file.read()
+            # print('dfd',file_content)
+            if not file_content:
+                raise ValueError("File content is empty")
+            file_name = file.name
+            print('file_name',file_name)
+            # Generate a unique S3 object key
+            s3_object_key = f"cvs/{file_name}"
 
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            # Upload the file to S3
+            print('above')
+            s3_url = upload_to_s3(file_content, s3_object_key, content_type=file.content_type)
+            print(f"File uploaded to S3: {s3_url}")
+
+            # Update the request data to include the S3 URL
+            mutable_data = request.data.copy()
+            mutable_data['file_url'] = s3_url
+
+            # Validate and save the data using the serializer
+            serializer = CandidateSerializer(data=mutable_data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            else:
+                print(serializer.errors)
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        except ClientError as e:
+            print(f"S3 Upload failed: {e}")
+            return Response({'error': 'Failed to upload CV to S3'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            return Response({'error': 'An unexpected error occurred'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    else:
+        # If no 'cv' file is provided
+        return Response({'error': 'No CV file uploaded'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['DELETE'])

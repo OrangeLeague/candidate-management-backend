@@ -51,7 +51,8 @@ INSTALLED_APPS = [
     "corsheaders",
     "rest_framework",
     "whitenoise.runserver_nostatic",
-    "whitenoise"
+    "whitenoise",
+    "storages"
 ]
 
 MIDDLEWARE = [
@@ -205,7 +206,7 @@ CSRF_TRUSTED_ORIGINS = ['http://localhost:3000','http://localhost:8000','https:/
 
 MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
 
-MEDIA_URL = '/media/'
+MEDIA_URL = 'media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 

@@ -213,7 +213,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 BACKBLAZE_ACCESS_KEY = "0055220d59da28e0000000001"  # keyID
 BACKBLAZE_SECRET_KEY = "K0051GxUfvsAzESLv33K9AulaV+nd1E"  # applicationKey
-BACKBLAZE_ENDPOINT_URL = "https://s3.us-west-002.backblazeb2.com"  # Adjust if region is us-east-005
+BACKBLAZE_ENDPOINT_URL = "https://s3.us-east-005.backblazeb2.com"  # Adjust if region is us-east-005
 BACKBLAZE_BUCKET_NAME = "OLVT-DB"
 
 

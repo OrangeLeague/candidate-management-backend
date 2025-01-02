@@ -247,7 +247,8 @@ def add_candidate(request):
         print('started3@@@')
         try:
             print('started3')
-            file_url = b2.upload_file(temp_path, file_name)
+            # file_url = b2.upload_file(temp_path, file_name)
+            file_url = b2.generate_presigned_url(file_name)
             print(f"File uploaded successfully: {file_url}")
             os.remove(temp_path)  # Remove the temporary file
             # Include the file URL in the request data

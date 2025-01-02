@@ -34,3 +34,16 @@ class BackblazeB2:
     def get_file_url(self, object_name):
         """Generate a public URL for a file."""
         return f"{settings.BACKBLAZE_ENDPOINT_URL}/{self.bucket_name}/{object_name}"
+    
+    def generate_presigned_url(self, object_name, expiration=3600):
+        """Generate a pre-signed URL to upload a file."""
+        try:
+            # Generate a presigned URL to upload a file
+            url = self.s3.generate_presigned_url(
+                'put_object',
+                Params={'Bucket': self.bucket_name, 'Key': object_name},
+                ExpiresIn=expiration
+            )
+            return url
+        except Exception as e:
+            raise Exception(f"Failed to generate presigned URL: {e}")

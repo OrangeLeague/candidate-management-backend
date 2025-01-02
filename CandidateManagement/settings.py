@@ -220,8 +220,8 @@ BACKBLAZE_BUCKET_NAME = "OLVT-DB"
 
 # AWS S3 Configuration in Django settings.py
 
-AWS_ACCESS_KEY_ID = 'AKIAS2VS4NCUU2RN32G4'  # Replace with your AWS Access Key ID
-AWS_SECRET_ACCESS_KEY = '3hxcTp4+roOW7YZtIzZnZO45phCX3ZzXnNskv6pz'  # Replace with your AWS Secret Access Key
+AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
 AWS_STORAGE_BUCKET_NAME = 'olvttalentspherebucket'  # Replace with your bucket name
 AWS_S3_REGION_NAME = 'ap-south-1'  # e.g., 'us-west-2'
 AWS_S3_ENDPOINT_URL = 'https://s3.amazonaws.com'  # Default S3 endpoint URL

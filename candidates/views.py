@@ -23,10 +23,19 @@ import os
 import boto3
 from botocore.exceptions import ClientError
 import io
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.models import User
+from django.middleware.csrf import get_token
+from django.views.decorators.csrf import ensure_csrf_cookie
+
 
 AWS_ACCESS_KEY_ID = 'AKIAS2VS4NCUU2RN32G4'
 AWS_SECRET_ACCESS_KEY = '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'
 S3_BUCKET = 'olvttalentspherebucket'
+
+@ensure_csrf_cookie
+def csrf_view(request):
+    return JsonResponse({"csrfToken": request.META.get("CSRF_COOKIE")})
 
 def s3_client():
     """
@@ -78,6 +87,7 @@ def upload_to_s3(file_content, s3_object_key, content_type=None):
         raise e
 # Manual Login View
 @csrf_exempt
+# @ensure_csrf_cookie
 def login_view(request):
     print(request,'request1')
     if request.method == 'POST':
@@ -85,14 +95,38 @@ def login_view(request):
         data = json.loads(request.body)  # Parse JSON body from React
         username = data.get('username')
         password = data.get('password')
+        print(username,'username')
+
+    #     # Debug: Check if user exists
+    #     print(f"User exists1: {user_exists}")
+    #     user_exists = User.objects.filter(username=username).exists()
+    #     print(f"User exists: {user_exists}")
+        
+    #     print('above')
+    #     user = authenticate(request, username=username, password=password)
+    #     print('below')
+    #     print(user,'usererr')
+    #     if user is not None:
+    #         login(request, user)  # Set session
+    #         return JsonResponse({
+    #             "message": "Login successful",
+    #             "team_id": user.id,
+    #             "username": user.username
+    #         }, status=200)
+    #     else:
+    #         return JsonResponse({"detail": "Invalid credentials"}, status=400)
+
+    # return JsonResponse({"detail": "Invalid request method"}, status=405)
 
         try:
             team = Team.objects.get(username=username, password=password)
             # Create a mock token for now (use JWT in production)
+            print(f"Cookies12: {request.COOKIES}")
+            print(f"Session Key12: {request.session.session_key}")
             print(team.id,'teamsdfsdfsdf')
             request.session['team_id'] = team.id
-            request.session.save()
-            print(f"Session data: {request.session.items()}")
+            # request.session.save()
+            print(f"Session data12: {request.session.items()}")
             token = f"mock-token-{team.id}"
             print(request,'request12')
             return JsonResponse({
@@ -104,18 +138,25 @@ def login_view(request):
             return JsonResponse({"detail": "Invalid credentials"}, status=400)
 
     return JsonResponse({"detail": "Invalid request method"}, status=405)
+    # Authenticate user
 
 # Logout View
 @csrf_exempt
+# @ensure_csrf_cookie
 def logout_view(request):
     print(f"Cookies: {request.COOKIES}")
     print(f"Session Key: {request.session.session_key}")
-    print(f"Session Data Before: {request.session.items()}")
-    if 'team_id' in  request.session:
-        del request.session['team_id']
-        print(f"Session data3: {request.session.items()}")
+    print(f"Session Data Beforesss: {request.session.items()}")
+    # if 'team_id' in  request.session:
+    #     del request.session['team_id']
+    #     print(f"Session data3: {request.session.items()}")
+    #     return JsonResponse({"message": "Successfully logged out"}, status=200)
+    # return JsonResponse({"error": "No active session found"}, status=400)
+
+    if request.method == 'POST':
+        logout(request)  # Clear session
         return JsonResponse({"message": "Successfully logged out"}, status=200)
-    return JsonResponse({"error": "No active session found"}, status=400)
+    return JsonResponse({"detail": "Invalid request method"}, status=405)
 
 @csrf_exempt
 def candidate_list(request):
@@ -168,10 +209,15 @@ def candidate_list(request):
 
 @csrf_exempt
 def update_status(request, candidate_id, status):
+    print('entered')
     """
     View to update candidate status by the logged-in team.
     """
-    team_id = request.session.get('team_id')
+    print('ssdsdfsdfs......dfsdfsdfsdfsdf')
+    data = json.loads(request.body)  # Parse JSON body
+    # team_id = request.session.get('team_id')
+    team_id=data.get('activeTeamId')
+    print(f"Session Itemssasas: {request.session.items()}")
     if not team_id:
         return JsonResponse({"error": "Unauthorized access"}, status=401)
 
@@ -183,7 +229,7 @@ def update_status(request, candidate_id, status):
     except Candidate.DoesNotExist:
         return JsonResponse({"error": "Candidate not found"}, status=404)
 
-    data = json.loads(request.body)  # Parse JSON body
+    # data = json.loads(request.body)  # Parse JSON body
     comment = data.get('comment')
     # Logic to update candidate status
     if status == 'Interview Scheduled' and candidate.status == 'Open':

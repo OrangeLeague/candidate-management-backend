@@ -461,6 +461,50 @@ def delete_candidate(request, pk):
     candidate.delete()
     return Response({"message": "Candidate deleted successfully."}, status=status.HTTP_200_OK)
 
+@api_view(['PUT'])
+def update_candidate(request, pk):
+    """
+    Update a specific candidate by ID.
+    """
+    candidate = get_object_or_404(Candidate, pk=pk)
+
+    # Check if the request contains a CV file
+    if request.FILES.get('cv'):
+        try:
+            # Get the file from the request
+            file = request.FILES['cv']
+            file_content = file.read()
+            if not file_content:
+                raise ValueError("File content is empty")
+            file_name = file.name
+
+            # Generate a unique S3 object key
+            s3_object_key = f"cvs/{file_name}"
+
+            # Upload the file to S3
+            s3_url = upload_to_s3(file_content, s3_object_key, content_type=file.content_type)
+
+            # Update the request data to include the S3 URL
+            mutable_data = request.data.copy()
+            mutable_data['file_url'] = s3_url
+        except ClientError as e:
+            return Response({'error': 'Failed to upload CV to S3'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except Exception as e:
+            return Response({'error': 'An unexpected error occurred'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    print(candidate.status,'testing',request.data)
+    # Preserve the current status if it's not provided in the request
+    if 'status' not in request.data:
+        request.data['status'] = candidate.status
+
+    # Validate and update the candidate using the serializer
+    serializer = CandidateSerializer(candidate, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    else:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 def parse_time(time_str):
     """
     Convert time in 'HH:MM AM/PM' format to a Python time object.
@@ -678,3 +722,20 @@ def upload_resume(request):
             return JsonResponse({'error': str(e)}, status=500)
 
     return JsonResponse({'error': 'Invalid request'}, status=400)
+
+def get_candidate_name(request, candidate_id):
+    """
+    Retrieve the candidate's name based on the candidate ID.
+
+    Args:
+        request: The HTTP request object.
+        candidate_id: The ID of the candidate.
+
+    Returns:
+        JsonResponse: The candidate's name or an error message if not found.
+    """
+    try:
+        candidate = get_object_or_404(Candidate, id=candidate_id)
+        return JsonResponse({"candidate_name": candidate.name})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400)

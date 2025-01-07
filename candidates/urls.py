@@ -19,9 +19,11 @@ urlpatterns = [
     path('admin/candidates/get-candidates', views.get_candidates, name='get_candidates'),  # Retrieve all candidates
     path('admin/candidates/add', views.add_candidate, name='add_candidate'),  # Add a new candidate
     path('admin/candidates/<int:pk>/', views.delete_candidate, name='delete_candidate'),  # Delete a candidate by ID
+    path('admin/candidates/<int:pk>/update', views.update_candidate, name='update_candidate'),  # Update a candidate by ID
 
     path('time-slots/bulk-schedule/', views.bulk_schedule_time_slots, name='bulk_schedule_time_slots'),
     path('get-candidates/<int:candidate_id>/time-slots/', views.get_candidate_time_slots, name='get_candidate_time_slots'),
+    path('get-candidate-name/<int:candidate_id>/', views.get_candidate_name, name='get_candidate_name'),
 ]
 
 

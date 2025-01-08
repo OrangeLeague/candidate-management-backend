@@ -1,9 +1,14 @@
 from django.db import models
 
 class Team(models.Model):
+    USER_ROLE_CHOICES = [
+        ('admin', 'Admin'),
+        ('candidate', 'Candidate'),
+    ]
     username = models.CharField(max_length=100, unique=True)
     password = models.CharField(max_length=100)  # Store hashed passwords in a real-world scenario
     name = models.CharField(max_length=100)
+    role = models.CharField(max_length=10, choices=USER_ROLE_CHOICES,null=True, blank=True)  # New field to differentiate roles
 
     def __str__(self):
         return self.name

@@ -95,7 +95,8 @@ def login_view(request):
         data = json.loads(request.body)  # Parse JSON body from React
         username = data.get('username')
         password = data.get('password')
-        print(username,'username')
+        role = data.get('activeRole')
+        print(username,'username',role)
 
     #     # Debug: Check if user exists
     #     print(f"User exists1: {user_exists}")
@@ -119,7 +120,9 @@ def login_view(request):
     # return JsonResponse({"detail": "Invalid request method"}, status=405)
 
         try:
-            team = Team.objects.get(username=username, password=password)
+            # team = Team.objects.get(username=username, password=password)
+            team = Team.objects.get(username=username, password=password, role=role)
+            print(team,'teamsddf')
             # Create a mock token for now (use JWT in production)
             print(f"Cookies12: {request.COOKIES}")
             print(f"Session Key12: {request.session.session_key}")
@@ -132,7 +135,8 @@ def login_view(request):
             return JsonResponse({
                 "access": token,
                 "message": "Login successful",
-                "team_id":team.id
+                "team_id":team.id,
+                "role": team.role,
             }, status=200)
         except Team.DoesNotExist:
             return JsonResponse({"detail": "Invalid credentials"}, status=400)

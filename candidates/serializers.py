@@ -4,7 +4,7 @@ from .models import Team, Candidate,RejectionComment
 class TeamSerializer(serializers.ModelSerializer):
     class Meta:
         model = Team
-        fields = ['id', 'username', 'password', 'name']
+        fields = ['id', 'username', 'password', 'name','role']
 
 class RejectionCommentSerializer(serializers.ModelSerializer):
     team = TeamSerializer(read_only=True)  # Nested serializer for team details

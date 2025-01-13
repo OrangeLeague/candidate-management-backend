@@ -100,16 +100,21 @@ if ENVIRONMENT=='production':
 else:
     DATABASES = {
         "default": {
-            'ENGINE': 'django.db.backends.postgresql',  # Use PostgreSQL
+            # 'ENGINE': 'django.db.backends.postgresql',  # Use PostgreSQL
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
             # 'NAME': 'postgres',                     # Your database name
-            'NAME':'olvtdb',
+            # 'NAME':'olvtdb',
+            'NAME':'olvt_db',
             # 'USER': 'postgres',                         # Your database username
-            'USER':'olvtdb_user',
+            # 'USER':'olvtdb_user',
+            'USER':'postgres',
             # 'PASSWORD': 'postgres',                 # Your database password
-            'PASSWORD':'meU7gCaUjdYnv3u4GIJOpUxZAJAuo77k',
+            # 'PASSWORD':'meU7gCaUjdYnv3u4GIJOpUxZAJAuo77k',
+            'PASSWORD':'League9989',
             # 'HOST': 'localhost',                      # Host address (localhost for local)
-            'HOST':'dpg-ctbf02jtq21c73c5o3dg-a.oregon-postgres.render.com',
-            'PORT': '5432', 
+            # 'HOST':'dpg-ctbf02jtq21c73c5o3dg-a.oregon-postgres.render.com',
+            'HOST':'database-1.ctwy2icw0sw9.ap-south-1.rds.amazonaws.com',
+            'PORT': '5432',
         }
     }
 

@@ -1,4 +1,5 @@
 from django.db import models
+import uuid
 
 class Team(models.Model):
     USER_ROLE_CHOICES = [
@@ -22,7 +23,7 @@ class Candidate(models.Model):
         ('Selected', 'Selected'),
         ('Rejected', 'Rejected'),
     ]
-
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)  # Use UUID for unique IDs
     name = models.CharField(max_length=200)
     years_of_experience = models.IntegerField()
     skillset = models.CharField(max_length=200)

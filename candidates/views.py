@@ -137,6 +137,7 @@ def login_view(request):
                 "message": "Login successful",
                 "team_id":team.id,
                 "role": team.role,
+                "team_name":team.name,
             }, status=200)
         except Team.DoesNotExist:
             return JsonResponse({"detail": "Invalid credentials"}, status=400)

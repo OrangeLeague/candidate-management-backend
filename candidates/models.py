@@ -29,6 +29,7 @@ class Candidate(models.Model):
     skillset = models.CharField(max_length=200)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Open')
     cv = models.FileField(upload_to='cvs/')
+    email=models.CharField(max_length=200,null=True, blank=True)
     team = models.ForeignKey(Team, null=True, blank=True, on_delete=models.SET_NULL)
     rejected_by = models.ManyToManyField(Team, related_name='rejected_candidates', blank=True)
     scheduled_time = models.DateTimeField(null=True, blank=True)  # New field to store interview scheduled time

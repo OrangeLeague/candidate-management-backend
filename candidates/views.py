@@ -27,7 +27,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.middleware.csrf import get_token
 from django.views.decorators.csrf import ensure_csrf_cookie
-
+from django.core.mail import send_mail
 
 AWS_ACCESS_KEY_ID = 'AKIAS2VS4NCUU2RN32G4'
 AWS_SECRET_ACCESS_KEY = '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'
@@ -196,6 +196,7 @@ def candidate_list(request):
             "name": candidate.name,
             "years_of_experience": candidate.years_of_experience,
             "skillset": candidate.skillset,
+            "email": candidate.email if candidate.email else None,
             "status": candidate.status,
             "cv": candidate.cv.url if candidate.cv else None,
             "team": candidate.team.name if candidate.team else None,
@@ -449,7 +450,9 @@ def get_time_slots_for_half(half):
     if half == "1st half":
         return ["9:00 AM", "10:00 AM", "11:00 AM", "12:00 PM"]
     elif half == "2nd half":
-        return ["12:00 PM", "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM", "5:00 PM"]
+        return ["1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM", "5:00 PM","6:00 PM"]
+    elif half == "Any Time of the day":
+        return ["8:00 AM","9:00 AM", "10:00 AM", "11:00 AM", "12:00 PM","1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM", "5:00 PM","6:00 PM"]
     else:
         return []
 
@@ -490,7 +493,7 @@ def bulk_schedule_time_slots(request):
 
                 # Loop through the time slots for this date
                 for time_str in time_slots:
-                    if time_str in ["1st half", "2nd half"]:
+                    if time_str in ["1st half", "2nd half","Any Time of the day"]:
                         # If it's "1st half" or "2nd half", get the predefined time slots
                         predefined_slots = get_time_slots_for_half(time_str)
                         for slot in predefined_slots:
@@ -665,3 +668,22 @@ def get_candidate_name(request, candidate_id):
         return JsonResponse({"candidate_name": candidate.name})
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=400)
+
+# @api_view(['POST'])
+def request_time_slots(request):
+    candidate_email = request.data.get('email')
+    candidate_id = request.data.get('id')
+    
+    if not candidate_email or not candidate_id:
+        return Response({"error": "Invalid data"}, status=status.HTTP_400_BAD_REQUEST)
+
+    url = f"http://localhost:3000/candidates/{candidate_id}"
+    subject = "Request for Time Slots"
+    message = f"Dear Candidate,\n\nPlease provide your available time slots using the following link: {url}\n\nThank you."
+    from_email = "hr@olvtechnologies.com"
+
+    try:
+        send_mail(subject, message, from_email, [candidate_email])
+        return Response({"message": "Email sent successfully"}, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

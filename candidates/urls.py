@@ -24,6 +24,7 @@ urlpatterns = [
     path('time-slots/bulk-schedule/', views.bulk_schedule_time_slots, name='bulk_schedule_time_slots'),
     path('get-candidates/<uuid:candidate_id>/time-slots/', views.get_candidate_time_slots, name='get_candidate_time_slots'),
     path('get-candidate-name/<uuid:candidate_id>/', views.get_candidate_name, name='get_candidate_name'),
+    path('request-time-slots/', views.request_time_slots, name='request_time_slots'),
 ]
 
 

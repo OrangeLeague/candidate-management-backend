@@ -670,20 +670,43 @@ def get_candidate_name(request, candidate_id):
         return JsonResponse({"error": str(e)}, status=400)
 
 # @api_view(['POST'])
+@csrf_exempt
 def request_time_slots(request):
-    candidate_email = request.data.get('email')
-    candidate_id = request.data.get('id')
-    
-    if not candidate_email or not candidate_id:
-        return Response({"error": "Invalid data"}, status=status.HTTP_400_BAD_REQUEST)
-
-    url = f"http://localhost:3000/candidates/{candidate_id}"
-    subject = "Request for Time Slots"
-    message = f"Dear Candidate,\n\nPlease provide your available time slots using the following link: {url}\n\nThank you."
-    from_email = "hr@olvtechnologies.com"
-
+    import smtplib
     try:
-        send_mail(subject, message, from_email, [candidate_email])
-        return Response({"message": "Email sent successfully"}, status=status.HTTP_200_OK)
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login('careers@olvtechnologies.com', 'cdok zwjp dsux ilmb')  # Replace with your App Password
+        print("SMTP login successful!")
+        server.quit()
     except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        print(f"SMTP Debug Error: {e}")
+
+    # Processing the Request
+    try:
+        data = json.loads(request.body)
+        candidate_email = data.get('email')
+        candidate_id = data.get('id')
+
+        print(f"Candidate Email: {candidate_email}, Candidate ID: {candidate_id}")
+
+        if not candidate_email or not candidate_id:
+            return JsonResponse({"error": "Invalid data"}, status=400)
+
+        url = f"https://talentsphere.olvtechnologies.com/candidates/{candidate_id}"
+        subject = "Request for Time Slots"
+        message = f"Dear Candidate,\n\nPlease provide your available time slots using the following link: {url}\n\nThank you."
+        from_email = "careers@olvtechnologies.com"
+
+        # Send the Email
+        sent_status = send_mail(subject, message, from_email, [candidate_email])
+        print(f"Send mail status: {sent_status}")
+
+        if sent_status == 0:
+            return JsonResponse({"error": "Email not sent"}, status=500)
+
+        return JsonResponse({"message": "Email sent successfully"})
+
+    except Exception as e:
+        print(f"Error in processing: {e}")
+        return JsonResponse({"error": f"Internal Server Error: {e}"}, status=500)

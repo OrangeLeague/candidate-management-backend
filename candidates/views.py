@@ -758,12 +758,14 @@ def send_mail_notification(request):
         print(data,'daasdfdsdsdfsdfs')
         candidate_id = data.get("candidateId")
         status = data.get("status")
+        candidate_name=data.get("candidateName")
+        active_team_name=data.get("activeTeamName")
 
         # Replace with your HR email and mail logic
         hr_email = "hr@olvtechnologies.com"
         subject = f"Candidate Status Updated to {status}"
-        message = f"Candidate with ID {candidate_id} has been updated to the status: {status}."
+        message = f"Candidate {candidate_name} with ID {candidate_id} has been updated to the status: {status} with {active_team_name}."
         
         send_mail(subject, message, "careers@olvtechnologies.com", [hr_email])
-        return JsonResponse({"message": "Mail sent successfully"}, status=200)
+        return JsonResponse({"message": "Email has been succesfully sent to the candidate for their time slots"}, status=200)
     return JsonResponse({"error": "Invalid request method"}, status=400)

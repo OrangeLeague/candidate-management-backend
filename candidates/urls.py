@@ -25,6 +25,7 @@ urlpatterns = [
     path('get-candidates/<uuid:candidate_id>/time-slots/', views.get_candidate_time_slots, name='get_candidate_time_slots'),
     path('get-candidate-name/<uuid:candidate_id>/', views.get_candidate_name, name='get_candidate_name'),
     path('request-time-slots/', views.request_time_slots, name='request_time_slots'),
+    path('send-mail/', views.send_mail_notification, name='send_mail_notification'),
 ]
 
 

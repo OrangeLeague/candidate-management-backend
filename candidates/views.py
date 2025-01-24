@@ -28,6 +28,7 @@ from django.contrib.auth.models import User
 from django.middleware.csrf import get_token
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.core.mail import send_mail
+from django.core.paginator import Paginator, EmptyPage
 
 AWS_ACCESS_KEY_ID = 'AKIAS2VS4NCUU2RN32G4'
 AWS_SECRET_ACCESS_KEY = '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'
@@ -190,6 +191,16 @@ def candidate_list(request):
         Q(rejected_by=team)
     )
 
+    # Pagination setup
+    page_number = request.GET.get('page', 1)  # Get current page from query params
+    page_size = int(request.GET.get('pageSize', 10))  # Default to 10 items per page
+    paginator = Paginator(candidates, page_size)
+
+    try:
+        candidates_page = paginator.page(page_number)
+    except EmptyPage:
+        return JsonResponse({"error": "Page not found"}, status=404)
+
     candidates_data = [
         {
             "id": candidate.id,
@@ -208,10 +219,16 @@ def candidate_list(request):
             "vendor":candidate.vendor if candidate.vendor else None,
             "file_url":candidate.file_url if candidate.file_url else None,
         }
-        for candidate in candidates
+        for candidate in candidates_page
     ]
 
-    return JsonResponse({"candidates": candidates_data})
+    # return JsonResponse({"candidates": candidates_data})
+    return JsonResponse({
+        "candidates": candidates_data,
+        "total_pages": paginator.num_pages,
+        "total_items": paginator.count,
+        "current_page": page_number,
+    })
 
 @csrf_exempt
 def update_status(request, candidate_id, status):
@@ -328,8 +345,31 @@ def get_candidates(request):
     Retrieve all candidates.
     """
     candidates = Candidate.objects.all()
-    serializer = CandidateSerializer(candidates, many=True)
-    return Response(serializer.data)
+
+    # Get pagination parameters from query params
+    page_number = int(request.GET.get("page", 1))  # Default to page 1
+    page_size = int(request.GET.get("pageSize", 10))  # Default to 10 items per page
+
+    paginator = Paginator(candidates, page_size)
+
+    try:
+        candidates_page = paginator.page(page_number)
+    except EmptyPage:
+        return Response({
+            "error": "Page not found",
+            "total_pages": paginator.num_pages,
+            "current_page": page_number,
+            "total_items": paginator.count,
+            "candidates": [],
+        })
+    
+    serializer = CandidateSerializer(candidates_page, many=True)
+    return Response({
+        "candidates": serializer.data,
+        "total_pages": paginator.num_pages,
+        "total_items": paginator.count,
+        "current_page": page_number,
+    })
 
 
 @api_view(['POST'])
@@ -710,3 +750,20 @@ def request_time_slots(request):
     except Exception as e:
         print(f"Error in processing: {e}")
         return JsonResponse({"error": f"Internal Server Error: {e}"}, status=500)
+
+@csrf_exempt
+def send_mail_notification(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        print(data,'daasdfdsdsdfsdfs')
+        candidate_id = data.get("candidateId")
+        status = data.get("status")
+
+        # Replace with your HR email and mail logic
+        hr_email = "hr@olvtechnologies.com"
+        subject = f"Candidate Status Updated to {status}"
+        message = f"Candidate with ID {candidate_id} has been updated to the status: {status}."
+        
+        send_mail(subject, message, "careers@olvtechnologies.com", [hr_email])
+        return JsonResponse({"message": "Mail sent successfully"}, status=200)
+    return JsonResponse({"error": "Invalid request method"}, status=400)

@@ -344,7 +344,7 @@ def get_candidates(request):
     """
     Retrieve all candidates.
     """
-    candidates = Candidate.objects.all()
+    candidates = Candidate.objects.all().order_by('-created_at')
 
     # Get pagination parameters from query params
     page_number = int(request.GET.get("page", 1))  # Default to page 1

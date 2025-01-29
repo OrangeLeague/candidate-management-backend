@@ -39,7 +39,7 @@ class Candidate(models.Model):
     current_location=models.CharField(max_length=200, blank=True)
     vendor=models.CharField(max_length=200,default='OLVT', blank=True)
     file_url = models.URLField(max_length=1024,null=True, blank=True)  # Store the public URL of the file
-    created_at = models.DateTimeField(auto_now_add=True,null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True,null=True, blank=True,db_index=True)
 
     def __str__(self):
         return self.name

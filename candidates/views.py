@@ -355,21 +355,21 @@ def get_candidates(request):
     try:
         candidates_page = paginator.page(page_number)
     except EmptyPage:
-        return Response({
+        return JsonResponse({
             "error": "Page not found",
             "total_pages": paginator.num_pages,
             "current_page": page_number,
             "total_items": paginator.count,
             "candidates": [],
-        })
+        },status=400)
     
     serializer = CandidateSerializer(candidates_page, many=True)
-    return Response({
+    return JsonResponse({
         "candidates": serializer.data,
         "total_pages": paginator.num_pages,
         "total_items": paginator.count,
         "current_page": page_number,
-    })
+    },status=200)
 
 
 @api_view(['POST'])

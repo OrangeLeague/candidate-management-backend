@@ -1,13 +1,13 @@
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
-from .models import Team, Candidate
+from .models import Team, Candidate,Interviewer
 from django.views.decorators.csrf import csrf_exempt
 from django.db import models
 from django.db.models import Q
 from rest_framework.views import APIView
-from .serializers import TeamSerializer, CandidateSerializer
+from .serializers import TeamSerializer, CandidateSerializer,HrSerializer,InterviewerSerializer
 from rest_framework import status
-from .models import Team, Candidate, RejectionComment,TimeSlot
+from .models import Team, Candidate, RejectionComment,TimeSlot,HrTeam,Interviewer,InterviewerTimeSlot
 from rest_framework.response import Response
 from django.utils.decorators import method_decorator
 from json import loads
@@ -88,51 +88,20 @@ def upload_to_s3(file_content, s3_object_key, content_type=None):
         raise e
 # Manual Login View
 @csrf_exempt
-# @ensure_csrf_cookie
 def login_view(request):
-    print(request,'request1')
     if request.method == 'POST':
         import json
         data = json.loads(request.body)  # Parse JSON body from React
         username = data.get('username')
         password = data.get('password')
         role = data.get('activeRole')
-        print(username,'username',role)
-
-    #     # Debug: Check if user exists
-    #     print(f"User exists1: {user_exists}")
-    #     user_exists = User.objects.filter(username=username).exists()
-    #     print(f"User exists: {user_exists}")
-        
-    #     print('above')
-    #     user = authenticate(request, username=username, password=password)
-    #     print('below')
-    #     print(user,'usererr')
-    #     if user is not None:
-    #         login(request, user)  # Set session
-    #         return JsonResponse({
-    #             "message": "Login successful",
-    #             "team_id": user.id,
-    #             "username": user.username
-    #         }, status=200)
-    #     else:
-    #         return JsonResponse({"detail": "Invalid credentials"}, status=400)
-
-    # return JsonResponse({"detail": "Invalid request method"}, status=405)
 
         try:
             # team = Team.objects.get(username=username, password=password)
             team = Team.objects.get(username=username, password=password, role=role)
-            print(team,'teamsddf')
-            # Create a mock token for now (use JWT in production)
-            print(f"Cookies12: {request.COOKIES}")
-            print(f"Session Key12: {request.session.session_key}")
-            print(team.id,'teamsdfsdfsdf')
             request.session['team_id'] = team.id
             # request.session.save()
-            print(f"Session data12: {request.session.items()}")
             token = f"mock-token-{team.id}"
-            print(request,'request12')
             return JsonResponse({
                 "access": token,
                 "message": "Login successful",
@@ -498,7 +467,6 @@ def get_time_slots_for_half(half):
 
 
 @csrf_exempt
-# @login_required
 def bulk_schedule_time_slots(request):
     if request.method == "POST":
         try:
@@ -769,3 +737,280 @@ def send_mail_notification(request):
         send_mail(subject, message, "careers@olvtechnologies.com", [hr_email])
         return JsonResponse({"message": "Email has been succesfully sent to the candidate for their time slots"}, status=200)
     return JsonResponse({"error": "Invalid request method"}, status=400)
+
+#view functions for hr and interviewer application
+
+@csrf_exempt
+def hr_login_view(request):
+    if request.method == 'POST':
+        import json
+        data = json.loads(request.body)  # Parse JSON body from React
+        username = data.get('username')
+        password = data.get('password')
+        role = data.get('activeRole')
+
+        try:
+            # team = Team.objects.get(username=username, password=password)
+            team = HrTeam.objects.get(username=username, password=password, role=role)
+            request.session['team_id'] = team.id
+            # request.session.save()
+            token = f"mock-token-{team.id}"
+            return JsonResponse({
+                "access": token,
+                "message": "Login successful",
+                "team_id":team.id,
+                "role": team.role,
+                "team_name":team.name,
+            }, status=200)
+        except Team.DoesNotExist:
+            return JsonResponse({"detail": "Invalid credentials"}, status=400)
+
+    return JsonResponse({"detail": "Invalid request method"}, status=405)
+
+@csrf_exempt
+def add_hr(request):
+    if request.method == "POST":
+        try:
+            # Parse JSON data from the request
+            data = loads(request.body)
+        except ValueError:
+            return JsonResponse({"error": "Invalid JSON format"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Use the serializer to validate and save the data
+        serializer = HrSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data, status=status.HTTP_201_CREATED)
+        return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    return JsonResponse({"error": "Only POST method is allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+@csrf_exempt
+def get_hr_teams(request):
+    """
+    Retrieve all teams.
+    """
+    if request.method == "GET":
+        teams = HrTeam.objects.all()
+        serializer = TeamSerializer(teams, many=True)
+        return JsonResponse(serializer.data, safe=False)
+    return JsonResponse({"error": "Only GET method is allowed"}, status=405)
+
+@api_view(['POST'])
+def add_interviewer(request):
+    if request.method == "POST":
+        try:
+            # Parse JSON data from the request
+            data = request.data.copy()
+        except ValueError:
+            return JsonResponse({"error": "Invalid JSON format"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Use the serializer to validate and save the data
+        serializer = InterviewerSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data, status=status.HTTP_201_CREATED)
+        return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    return JsonResponse({"error": "Only POST method is allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+@api_view(['GET'])
+def get_interviewers(request):
+    """
+    Retrieve all candidates.
+    """
+    interviewers = Interviewer.objects.all().order_by('-created_at')
+
+    # Get pagination parameters from query params
+    page_number = int(request.GET.get("page", 1))  # Default to page 1
+    page_size = int(request.GET.get("pageSize", 10))  # Default to 10 items per page
+
+    paginator = Paginator(interviewers, page_size)
+
+    try:
+        candidates_page = paginator.page(page_number)
+    except EmptyPage:
+        return JsonResponse({
+            "error": "Page not found",
+            "total_pages": paginator.num_pages,
+            "current_page": page_number,
+            "total_items": paginator.count,
+            "candidates": [],
+        },status=400)
+    
+    serializer = InterviewerSerializer(candidates_page, many=True)
+    return JsonResponse({
+        "candidates": serializer.data,
+        "total_pages": paginator.num_pages,
+        "total_items": paginator.count,
+        "current_page": page_number,
+    },status=200)
+
+@csrf_exempt
+def request_interviewer_time_slots(request):
+    import smtplib
+    try:
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login('careers@olvtechnologies.com', 'cdok zwjp dsux ilmb')  # Replace with your App Password
+        print("SMTP login successful!")
+        server.quit()
+    except Exception as e:
+        print(f"SMTP Debug Error: {e}")
+
+    # Processing the Request
+    try:
+        data = json.loads(request.body)
+        candidate_email = data.get('email')
+        candidate_id = data.get('id')
+
+        print(f"Candidate Email: {candidate_email}, Candidate ID: {candidate_id}")
+
+        if not candidate_email or not candidate_id:
+            return JsonResponse({"error": "Invalid data"}, status=400)
+
+        url = f"https://talentsphere.olvtechnologies.com/candidates/{candidate_id}"
+        subject = "Request for Time Slots"
+        message = f"Dear Candidate,\n\nPlease provide your available time slots using the following link: {url}\n\nThank you."
+        from_email = "careers@olvtechnologies.com"
+
+        # Send the Email
+        sent_status = send_mail(subject, message, from_email, [candidate_email])
+        print(f"Send mail status: {sent_status}")
+
+        if sent_status == 0:
+            return JsonResponse({"error": "Email not sent"}, status=500)
+
+        return JsonResponse({"message": "Email sent successfully"})
+
+    except Exception as e:
+        print(f"Error in processing: {e}")
+        return JsonResponse({"error": f"Internal Server Error: {e}"}, status=500)
+
+def get_interviewer_time_slots(request, candidate_id):
+    """
+    Fetch all time slots for a given candidate by ID.
+    """
+    try:
+        # Check if the candidate exists
+        time_slots = InterviewerTimeSlot.objects.filter(interviewer_id=candidate_id).order_by('date', 'time')
+
+        if not time_slots.exists():
+            return JsonResponse({"message": f"No time slots found for candidate ID {candidate_id}."}, status=404)
+
+        # Prepare the response data
+        response_data = {}
+        for slot in time_slots:
+            date_key = slot.date.isoformat()  # Group by date in ISO format
+            if date_key not in response_data:
+                response_data[date_key] = []
+            response_data[date_key].append(slot.time.strftime("%I:%M %p"))  # Format time in HH:MM AM/PM
+
+        return JsonResponse({"candidate_id": candidate_id, "time_slots": response_data}, status=200)
+
+    except Exception as e:
+        return JsonResponse({"error": f"An unexpected error occurred: {str(e)}"}, status=500)
+
+@csrf_exempt
+def interviewer_bulk_schedule_time_slots(request):
+    if request.method == "POST":
+        try:
+            # Parse incoming JSON data
+            data = json.loads(request.body)
+            print('enter1')
+            # Validate that the data is in the expected format (dictionary with dates as keys)
+            if not isinstance(data, dict):
+                return JsonResponse({"error": "Invalid data format. Expected a dictionary with dates as keys."}, status=400)
+
+            # Extract candidate ID from the data
+            print('enter2')
+            candidate_id = data.get("candidate")
+            if not candidate_id:
+                return JsonResponse({"error": "Candidate ID is required."}, status=400)
+
+            try:
+                candidate = Interviewer.objects.get(id=candidate_id)
+            except Candidate.DoesNotExist:
+                return JsonResponse({"error": f"Candidate with ID {candidate_id} does not exist."}, status=400)
+            print('enter3')
+            # List to hold created time slots for response
+            created_slots = []
+
+            for date, time_slots in data.items():
+                # Skip "candidate" key if it is present
+                print('enter3a')
+                if date == "candidate":
+                    continue
+                print('enter3b')
+
+                # Validate that time slots are a list
+                if not isinstance(time_slots, list):
+                    return JsonResponse({"error": f"Invalid time slots for {date}. Expected a list of time slots."}, status=400)
+
+                # Loop through the time slots for this date
+                for time_str in time_slots:
+                    if time_str in ["1st half", "2nd half","Any Time of the day"]:
+                        # If it's "1st half" or "2nd half", get the predefined time slots
+                        predefined_slots = get_time_slots_for_half(time_str)
+                        for slot in predefined_slots:
+                            # Convert the slot to a valid time format
+                            time_obj = parse_time(slot)
+                            print('enter4')
+
+                            # Check if the time slot already exists for the candidate on this date and time
+                            if InterviewerTimeSlot.objects.filter(interviewer=candidate, date=date, time=time_obj).exists():
+                                continue  # Skip if this slot already exists
+                            print('enter5')
+                            # Create the time slot
+                            time_slot = InterviewerTimeSlot.objects.create(
+                                interviewer=candidate,
+                                date=date,
+                                time=time_obj,
+                                created_by=request.user if request.user.is_authenticated else None
+                            )
+
+                            # Add the created time slot to the list for response
+                            created_slots.append({
+                                "id": time_slot.id,
+                                "candidate": candidate.id,
+                                "date": time_slot.date,
+                                "time": time_slot.time.strftime('%I:%M %p'),
+                                "created_by": time_slot.created_by.id if time_slot.created_by else None,
+                                "created_at": time_slot.created_at.isoformat(),
+                            })
+                    else:
+                        # If it's a specific time (not 1st/2nd half), directly process it
+                        time_obj = parse_time(time_str)
+
+                        # Check if the time slot already exists for the candidate on this date and time
+                        if InterviewerTimeSlot.objects.filter(interviewer=candidate, date=date, time=time_obj).exists():
+                            continue  # Skip if this slot already exists
+
+                        # Create the time slot
+                        time_slot = InterviewerTimeSlot.objects.create(
+                            interviewer=candidate,
+                            date=date,
+                            time=time_obj,
+                            created_by=request.user if request.user.is_authenticated else None
+                        )
+
+                        # Add the created time slot to the list for response
+                        created_slots.append({
+                            "id": time_slot.id,
+                            "candidate": candidate.id,
+                            "date": time_slot.date,
+                            "time": time_slot.time.strftime('%I:%M %p'),
+                            "created_by": time_slot.created_by.id if time_slot.created_by else None,
+                            "created_at": time_slot.created_at.isoformat(),
+                        })
+
+            return JsonResponse({"created_slots": created_slots}, status=201)
+
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON format."}, status=400)
+        except ValidationError as e:
+            return JsonResponse({"error": str(e)}, status=400)
+        except Exception as e:
+            return JsonResponse({"error": f"An unexpected error occurred: {str(e)}"}, status=500)
+
+    return JsonResponse({"error": "Only POST method is allowed."}, status=405)

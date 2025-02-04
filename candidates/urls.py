@@ -26,6 +26,15 @@ urlpatterns = [
     path('get-candidate-name/<uuid:candidate_id>/', views.get_candidate_name, name='get_candidate_name'),
     path('request-time-slots/', views.request_time_slots, name='request_time_slots'),
     path('send-mail/', views.send_mail_notification, name='send_mail_notification'),
+
+    #urls for hr and interviewer application
+    path('hr-login/',views.hr_login_view,name='add_hr'),
+    path('add-hr/',views.add_hr,name='add_hr'),
+    path('get-hr-teams/',views.get_hr_teams,name='get_hr'),
+    path('add-interviewer/',views.add_interviewer,name="add_interviewer"),
+    path('get-interviewers/',views.get_interviewers,name="get-interviewers"),
+    path('time-slots/interviewer-bulk-schedule', views.interviewer_bulk_schedule_time_slots, name='interviewer_bulk_schedule_time_slots'),
+    path('get-interviewers/<uuid:candidate_id>/time-slots/', views.get_interviewer_time_slots, name='get_candidate_time_slots'),
 ]
 
 
